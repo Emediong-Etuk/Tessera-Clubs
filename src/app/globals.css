@@ -53,8 +53,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+  Dark values apply either by OS preference (when the visitor hasn't
+  chosen explicitly) or by an explicit `data-theme="dark"` on <html> set
+  by ThemeToggle. The reverse -- `data-theme="light"` -- re-asserts the
+  light values with equal specificity so it wins even when the OS itself
+  prefers dark; see ThemeToggle.tsx for how/when that attribute is set.
+*/
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #17181a;
     --surface: #1e2022;
     --surface-muted: #26282a;
@@ -74,6 +81,27 @@
     --danger-foreground: #2a140f;
     --danger-soft: #2c1c19;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #17181a;
+  --surface: #1e2022;
+  --surface-muted: #26282a;
+  --border: #34363a;
+  --foreground: #ecebe6;
+  --muted-foreground: #a19c90;
+
+  --accent: #6fb3a6;
+  --accent-foreground: #0e1f1c;
+  --accent-soft: #1f2d2b;
+
+  --warn: #d1ac72;
+  --warn-foreground: #241d10;
+  --warn-soft: #2b2417;
+
+  --danger: #d08b7d;
+  --danger-foreground: #2a140f;
+  --danger-soft: #2c1c19;
 }
 
 body {

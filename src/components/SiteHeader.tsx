@@ -3,6 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { NavLink } from "./NavLink";
+import { ThemeToggle } from "./ThemeToggle";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -32,6 +33,7 @@ export function SiteHeader() {
           >
             Join a club
           </NavLink>
+          <ThemeToggle />
           <WalletMultiButton style={{ height: 40, fontSize: 14 }} />
         </nav>
       </div>

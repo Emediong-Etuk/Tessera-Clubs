@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { WalletProviders } from "@/components/WalletProviders";
 import { SiteHeader } from "@/components/SiteHeader";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+
+// Sets `data-theme` on <html> before the page paints, so a saved
+// preference (from ThemeToggle) applies immediately instead of flashing
+// the OS-default theme first. Reads localStorage directly rather than
+// waiting for React to hydrate.
+const THEME_INIT_SCRIPT = `
+try {
+  var t = localStorage.getItem("tessera-theme");
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+} catch (e) {}
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +40,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         <WalletProviders>
           <DisclaimerBanner />
           <SiteHeader />
