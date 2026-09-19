@@ -67,15 +67,22 @@ SQLite, Jupiter's public Quote/Swap API.
 
 ## Getting started
 
+Needs a Postgres database (local via Docker, or any hosted free tier --
+Render, Neon, Supabase all work).
+
 ```bash
 npm install
 cp .env.local.example .env.local
+# Fill in DATABASE_URL with a real Postgres connection string, e.g.:
+#   docker run -d -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
+#   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
+
 # Generate an encryption key and paste it into .env.local:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 # Also copy DATABASE_URL into a plain `.env` file for the Prisma CLI:
-echo 'DATABASE_URL="file:./dev.db"' > .env
+echo 'DATABASE_URL="<same value as above>"' > .env
 
-npx prisma migrate dev --name init
+npx prisma migrate deploy   # applies the committed migrations
 npm run test    # proportional-share + savings math unit tests
 npm run dev
 ```
@@ -138,26 +145,53 @@ by someone with an actual funded wallet before a live demo.
 
 ## Deployment
 
+**Live at https://tessera-clubs.onrender.com**, deployed from this branch.
+
 The spec's default target was Vercel, with an explicit instruction to
 verify that works before committing to it. It doesn't, as-is: Vercel's
-serverless functions run on ephemeral, non-shared filesystems, so a
-file-based SQLite database (via Prisma) will not reliably persist
-contributions between requests -- different invocations can land on
-different containers with no shared disk. Signing with the decrypted club
-keypair itself is fine on Vercel (it's done per-request, not from a kept-
-warm process), but the database is the blocker.
+serverless functions run on ephemeral, non-shared filesystems, so the
+originally-planned file-based SQLite database (via Prisma) would not
+reliably persist contributions between requests -- different invocations
+can land on different containers with no shared disk. Signing with the
+decrypted club keypair itself would have been fine on Vercel (it's done
+per-request, not from a kept-warm process), but the database would not.
 
-Two ways to actually ship this:
-1. **Keep Vercel, swap the database.** Point `DATABASE_URL` at a hosted
-   Postgres (Neon, Supabase, Vercel Postgres) and change the Prisma
-   `datasource provider` to `postgresql`. Schema and app code don't
-   otherwise change.
-2. **Skip Vercel.** Deploy the whole app (Next.js + SQLite file) to a
-   single persistent instance -- Render, Fly.io, or a small VPS -- where
-   the filesystem actually persists between requests.
+What's actually deployed instead: a Render web service (free plan) running
+the Next.js app, backed by a Render Postgres instance (also free plan) --
+`prisma/schema.prisma`'s datasource is `postgresql`, and the committed
+migration in `prisma/migrations/` was generated offline (`prisma migrate
+diff --from-empty`) since this environment couldn't open a raw Postgres
+connection to a remote host to run `migrate dev` live; Render's own build
+step runs `prisma migrate deploy` against the real database, where that
+connection works fine.
 
-For a hackathon demo timeline, option 2 is faster: zero schema changes,
-and the SQLite file just needs to live on a persistent disk/volume.
+**Known limitations of this specific deployment, not the architecture:**
+- **Render's free Postgres plan expires 30 days after creation** and is
+  then deleted unless upgraded to a paid plan. Fine for a hackathon judging
+  window, not for anything longer-lived -- upgrade the database's plan in
+  the Render dashboard before that date if you want to keep it.
+- **Render's free web service spins down after 15 minutes of inactivity**
+  and takes ~30-60s to cold-start on the next request. For a live demo,
+  hit the URL a minute or two before you actually present.
+- `SOLANA_RPC_URL` is set to the public mainnet-beta endpoint, which is
+  rate-limited under concurrent load. Swap it for a real RPC provider
+  (Helius, Triton, QuickNode) in the Render dashboard's Environment tab if
+  the demo needs to hold up under multiple simultaneous users.
+- `CLUB_WALLET_ENCRYPTION_KEY` was generated fresh for this deployment and
+  set directly as a Render environment variable (never committed to git,
+  never printed anywhere). It's the only thing that can decrypt every
+  club wallet's private key -- back it up somewhere durable (Render's
+  dashboard lets you view it under this service's Environment tab) before
+  rotating or deleting it, since rotating it orphans any club wallet
+  funds encrypted under the old key.
+
+To redeploy after merging this branch to `main`, update the Render
+service's branch in its dashboard (Settings -> Build & Deploy).
+
+If you'd rather self-host elsewhere: any platform with a persistent
+Postgres and a normal (non-serverless) Node process works the same way --
+Fly.io, a VPS, Railway, etc. Vercel remains usable too, exactly as above,
+by pointing `DATABASE_URL` at any hosted Postgres.
 
 ## Testing
 
