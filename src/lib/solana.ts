@@ -151,3 +151,22 @@ export async function getTokenBalance(mintAddress: string, owner: string): Promi
     return 0;
   }
 }
+
+/**
+ * Live native SOL balance (in SOL, not lamports) of an address. The club
+ * wallet only ever *receives* USDC from contributions -- nothing funds
+ * its SOL balance automatically, but the batched buy and every exit
+ * payout are transactions signed and paid for by the club wallet itself.
+ * Surfaced on the dashboard so it's obvious *before* clicking "Buy" or
+ * "Leave club" that the wallet needs a small direct SOL top-up first,
+ * rather than failing confusingly mid-transaction.
+ */
+export async function getSolBalance(owner: string): Promise<number> {
+  const conn = getConnection();
+  try {
+    const lamports = await conn.getBalance(new PublicKey(owner));
+    return lamports / 1_000_000_000;
+  } catch {
+    return 0;
+  }
+}

@@ -7,6 +7,14 @@ recurring exposure to pre-IPO T-Tokens."**
 Prep beforehand: 2-3 browser wallets (Phantom/Solflare) funded with a
 trivial amount of SOL (fees) and USDC ($5-$20 each) on mainnet-beta.
 
+**Also fund the club wallet itself, separately, after creating the club.**
+It only ever receives USDC from contributions -- nothing tops up its SOL
+automatically, but it's the signer that pays for both the batched-buy
+swap and every exit payout. The dashboard shows its live SOL balance
+right under the club wallet address and warns in-app when it's too low;
+send it ~0.02-0.05 SOL directly (any wallet, right after creating the
+club, before clicking "Buy") so that step doesn't stall live.
+
 1. **(0:00-0:20) Create the club.** Connect Wallet A. "I have $20 and I
    want exposure to T-OpenAI, but $20 alone gets crushed by fees relative
    to the position size." Click **Create a club**, name it "OpenAI

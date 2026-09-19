@@ -35,6 +35,7 @@ interface ClubData {
   fundingGoalUsd: number | null;
   pendingPoolUsdc: number;
   tTokenBalance: number;
+  clubWalletSolBalance: number;
   members: Member[];
   executions: Array<{
     id: string;
@@ -242,6 +243,17 @@ export default function ClubDashboardPage() {
           >
             {truncateAddress(club.clubWalletAddress)}
           </a>
+        </p>
+        <p className="text-sm">
+          Club wallet SOL balance: <span className="font-medium">{club.clubWalletSolBalance.toFixed(4)} SOL</span>
+          {club.clubWalletSolBalance < 0.01 && (
+            <span className="ml-2 text-amber-700 dark:text-amber-400">
+              &mdash; too low. The club wallet pays its own network fees for the batched buy and every
+              exit payout, but it only ever receives USDC from contributions. Send it ~0.02-0.05 SOL
+              directly (to the address above) before clicking &quot;Buy&quot; or a member tries to leave,
+              or those transactions will fail.
+            </span>
+          )}
         </p>
         <div className="flex flex-wrap gap-4">
           <Link href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">

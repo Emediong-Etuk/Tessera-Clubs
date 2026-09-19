@@ -5,15 +5,17 @@ import {
   getMemberPositions,
   getPendingPoolTotal,
 } from "@/lib/club";
+import { getSolBalance } from "@/lib/solana";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ code: string }> }) {
   const { code } = await ctx.params;
   const club = await getClubByCodeOrId(code);
   if (!club) return NextResponse.json({ error: "Club not found" }, { status: 404 });
 
-  const [members, tTokenBalance] = await Promise.all([
+  const [members, tTokenBalance, clubWalletSolBalance] = await Promise.all([
     getMemberPositions(club),
     getClubTTokenBalance(club),
+    getSolBalance(club.clubWalletAddress),
   ]);
 
   return NextResponse.json({
@@ -28,6 +30,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
     createdAt: club.createdAt,
     pendingPoolUsdc: getPendingPoolTotal(club),
     tTokenBalance,
+    clubWalletSolBalance,
     members,
     executions: club.executions.map((e) => ({
       id: e.id,
