@@ -243,9 +243,14 @@ export default function ClubDashboardPage() {
             {truncateAddress(club.clubWalletAddress)}
           </a>
         </p>
-        <Link href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">
-          View the solo-vs-club savings comparison &rarr;
-        </Link>
+        <div className="flex flex-wrap gap-4">
+          <Link href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">
+            View the solo-vs-club savings comparison &rarr;
+          </Link>
+          <Link href={`/clubs/${club.inviteCode}/public`} className="text-sm font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300">
+            Share a read-only view &rarr;
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">

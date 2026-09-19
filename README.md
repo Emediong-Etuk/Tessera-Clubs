@@ -103,17 +103,38 @@ QuickNode, etc).
 
 ## Feature scope
 
-Built to the Tier 1 "must have" list: wallet connect, token discovery,
-create/join clubs via invite link, on-chain-verified contributions, a club
-dashboard with pooled totals and member shares, a manual batched-buy
-trigger, proportional position calculation, the live solo-vs-club savings
-screen, an exit flow with USDC-or-T-Token payout choice, and transaction
-history with Solana Explorer links.
+Built to the full Tier 1 "must have" list: wallet connect, token
+discovery, create/join clubs via invite link, on-chain-verified
+contributions, a club dashboard with pooled totals and member shares, a
+manual batched-buy trigger, proportional position calculation, the live
+solo-vs-club savings screen, an exit flow with USDC-or-T-Token payout
+choice, and transaction history with Solana Explorer links. Plus one
+Tier 2 item: a shareable, read-only public club page
+(`/clubs/[code]/public`) with no wallet or action controls.
 
 Explicitly cut (per the original scope): a Tessera-side bonding-curve
-market feature, public club discovery/marketplace, leaderboards, chat,
+market feature, a club discovery/marketplace, leaderboards, chat,
 governance, NFT badges, yield strategies, and scheduled/automatic batch
 buys (the buy button is manually triggered by design).
+
+## What's been verified vs. what still needs a funded wallet
+
+Verified in this environment: every API route against real Tessera/
+Jupiter/Solana mainnet-beta data (a real club was created through the
+running app and its live savings math checked against real quotes); every
+page click-tested in an actual headless-Chromium browser (landing,
+wallet-connect modal, create/join forms, dashboard, savings screen, public
+page, and the invalid-invite-code error path) -- including confirming the
+app degrades gracefully instead of crashing when Tessera's public API
+returned a transient 500 mid-session.
+
+**Not verified here**, because it requires a real funded mainnet wallet
+and a real browser wallet extension, neither of which exist in this
+environment: actually connecting Phantom/Solflare, sending a real USDC
+contribution, triggering a real batched swap, and exiting for a real
+payout. Those code paths were exercised against live APIs from the server
+side (see above), but the full signed-transaction flow needs a rehearsal
+by someone with an actual funded wallet before a live demo.
 
 ## Deployment
 
