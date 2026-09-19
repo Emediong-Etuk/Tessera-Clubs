@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ClubStatus {
+  OPEN
+  EXECUTED
+  CLOSED
+}
+
+enum PayoutType {
+  USDC
+  TTOKEN
+}
+
+model Club {
+  id                            String   @id @default(cuid())
+  name                          String
+  targetTokenMint               String
+  targetTokenSymbol             String
+  clubWalletAddress             String   @unique
+  clubWalletPrivateKeyEncrypted String
+  fundingGoalUsd                Float?
+  inviteCode                    String   @unique
+  status                        ClubStatus @default(OPEN)
+  createdAt                     DateTime @default(now())
+
+  memberships  Membership[]
+  contributions Contribution[]
+  executions   Execution[]
+  exits        Exit[]
+}
+
+model Membership {
+  id            String   @id @default(cuid())
+  clubId        String
+  walletAddress String
+  joinedAt      DateTime @default(now())
+
+  club          Club           @relation(fields: [clubId], references: [id])
+  contributions Contribution[]
+  exits         Exit[]
+
+  @@unique([clubId, walletAddress])
+}
+
+model Contribution {
+  id             String   @id @default(cuid())
+  clubId         String
+  membershipId   String
+  amountUsdc     Float
+  txSignature    String   @unique
+  contributedAt  DateTime @default(now())
+  executionId    String?
+
+  club         Club        @relation(fields: [clubId], references: [id])
+  membership   Membership  @relation(fields: [membershipId], references: [id])
+  execution    Execution?  @relation(fields: [executionId], references: [id])
+}
+
+model Execution {
+  id                        String   @id @default(cuid())
+  clubId                    String
+  totalUsdcAmount           Float
+  tTokenAmountReceived      Float
+  txSignature               String   @unique
+  executedAt                DateTime @default(now())
+  quotePriceImpactPct       Float
+  individualEstimatedCostUsd Float
+  clubActualCostUsd         Float
+  savingsUsd                Float
+
+  club          Club           @relation(fields: [clubId], references: [id])
+  contributions Contribution[]
+}
+
+model Exit {
+  id               String     @id @default(cuid())
+  clubId           String
+  membershipId     String
+  proportionShare  Float
+  payoutType       PayoutType
+  payoutAmount     Float
+  txSignature      String     @unique
+  exitedAt         DateTime   @default(now())
+
+  club       Club       @relation(fields: [clubId], references: [id])
+  membership Membership @relation(fields: [membershipId], references: [id])
+}
