@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { formatPct, formatToken, formatUsd, formatUsdPrecise } from "@/lib/format";
 import { BackLink } from "@/components/BackLink";
+import { cardClass } from "@/lib/ui";
 
 interface Comparison {
   individualTotalTTokens: number;
@@ -73,14 +74,14 @@ export default function SavingsPage() {
     };
   }, [code]);
 
-  if (loading) return <p className="text-sm text-zinc-500">Fetching live quote data...</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">Fetching live quote data...</p>;
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <BackLink href={`/clubs/${code}`} label={`Back to ${club?.name ?? "club"}`} />
-        <h1 className="mt-2 text-2xl font-bold">Solo vs. Club: what pooling actually costs</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Solo vs. Club: what pooling actually costs</h1>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           Every number below comes from a live quote fetched from Jupiter (the aggregator
           Tessera&apos;s own docs say T-Tokens actually trade through) and live Solana network
           data, right now &mdash; not a hardcoded or simulated figure.
@@ -90,7 +91,7 @@ export default function SavingsPage() {
       {savings?.available && savings.comparison ? (
         <LivePreview data={savings} symbol={club?.targetTokenSymbol ?? "T-Token"} />
       ) : (
-        <div className="rounded-xl border border-zinc-200 p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+        <div className={cardClass("text-sm text-muted-foreground")}>
           {savings?.error
             ? `Couldn't fetch live quote data: ${savings.error}`
             : "No pending contributions right now, so there's nothing to compare yet. Contribute to the club to see a live preview."}
@@ -102,15 +103,15 @@ export default function SavingsPage() {
           <h2 className="mb-3 font-semibold">Realized savings from past batched buys</h2>
           <div className="flex flex-col gap-3">
             {club.executions.map((e, i) => (
-              <div key={i} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+              <div key={i} className={cardClass("p-4")}>
                 <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span>{formatUsd(e.totalUsdcAmount)} pooled &rarr; {formatToken(e.tTokenAmountReceived)} {club.targetTokenSymbol}</span>
-                  <span className={e.savingsUsd >= 0 ? "font-semibold text-emerald-700 dark:text-emerald-400" : "font-semibold text-red-600 dark:text-red-400"}>
+                  <span className={e.savingsUsd >= 0 ? "font-semibold text-accent" : "font-semibold text-danger"}>
                     {e.savingsUsd >= 0 ? "Saved " : "Cost "}
                     {formatUsd(Math.abs(e.savingsUsd))}
                   </span>
                 </div>
-                <div className="mt-1 text-xs text-zinc-500">
+                <div className="mt-1 text-xs text-muted-foreground">
                   Executed {new Date(e.executedAt).toLocaleString()} &middot; pooled price impact{" "}
                   {formatPct(e.quotePriceImpactPct)}
                 </div>
@@ -126,20 +127,23 @@ export default function SavingsPage() {
 function LivePreview({ data, symbol }: { data: SavingsResponse; symbol: string }) {
   const c = data.comparison!;
   const positive = c.totalSavingsUsd >= 0;
+  const toneText = positive ? "text-accent" : "text-danger";
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-8 text-center dark:bg-emerald-950">
-        <div className="text-xs font-medium uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+      <div className="animate-fade-up relative overflow-hidden rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 top-0 -z-10 mx-auto h-48 w-full ${positive ? "bg-accent-soft" : "bg-danger-soft"} opacity-70 blur-3xl`}
+        />
+        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {data.memberCount} members pooling {formatUsd(data.totalPendingUsdc ?? 0)} right now
         </div>
-        <div
-          className={`mt-2 text-5xl font-extrabold ${positive ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-400"}`}
-        >
+        <div className={`mt-2 text-5xl font-semibold tracking-tight ${toneText}`}>
           {positive ? "+" : "-"}
           {formatUsdPrecise(Math.abs(c.totalSavingsUsd))}
         </div>
-        <div className="mt-1 text-sm text-emerald-900 dark:text-emerald-200">
+        <div className="mt-1 text-sm text-muted-foreground">
           {positive ? "saved" : "cost"} by executing one pooled buy instead of {c.numTransactionsIndividual}{" "}
           separate solo buys
         </div>
@@ -170,29 +174,29 @@ function LivePreview({ data, symbol }: { data: SavingsResponse; symbol: string }
         />
       </div>
 
-      <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <div className={cardClass()}>
         <h3 className="mb-2 font-semibold">Tokens received</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-zinc-500">Sum of solo buys</div>
+            <div className="text-muted-foreground">Sum of solo buys</div>
             <div className="text-lg font-semibold">{formatToken(c.individualTotalTTokens)} {symbol}</div>
-            <div className="text-xs text-zinc-500">{formatUsd(c.individualValueUsd)}</div>
+            <div className="text-xs text-muted-foreground">{formatUsd(c.individualValueUsd)}</div>
           </div>
           <div>
-            <div className="text-zinc-500">One pooled buy</div>
+            <div className="text-muted-foreground">One pooled buy</div>
             <div className="text-lg font-semibold">{formatToken(c.pooledTTokens)} {symbol}</div>
-            <div className="text-xs text-zinc-500">{formatUsd(c.pooledValueUsd)}</div>
+            <div className="text-xs text-muted-foreground">{formatUsd(c.pooledValueUsd)}</div>
           </div>
           <div>
-            <div className="text-zinc-500">Delta from pooling</div>
-            <div className={`text-lg font-semibold ${c.tokenValueDeltaUsd >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+            <div className="text-muted-foreground">Delta from pooling</div>
+            <div className={`text-lg font-semibold ${c.tokenValueDeltaUsd >= 0 ? "text-accent" : "text-danger"}`}>
               {formatUsd(c.tokenValueDeltaUsd)}
             </div>
           </div>
         </div>
       </div>
 
-      <p className="text-xs text-zinc-500">Source: {data.source}</p>
+      <p className="text-xs text-muted-foreground">Source: {data.source}</p>
     </div>
   );
 }
@@ -207,19 +211,19 @@ function StatCard({
   note: string;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+    <div className={cardClass()}>
       <h3 className="mb-3 font-semibold">{title}</h3>
-      <div className="flex flex-col gap-1 text-sm">
+      <div className="flex flex-col gap-1.5 text-sm">
         {rows.map(([label, value, highlightPositive], i) => (
           <div key={i} className="flex justify-between">
-            <span className="text-zinc-500">{label}</span>
+            <span className="text-muted-foreground">{label}</span>
             <span
               className={
                 highlightPositive === undefined
                   ? "font-medium"
                   : highlightPositive
-                    ? "font-semibold text-emerald-700 dark:text-emerald-400"
-                    : "font-semibold text-red-600 dark:text-red-400"
+                    ? "font-semibold text-accent"
+                    : "font-semibold text-danger"
               }
             >
               {value}
@@ -227,7 +231,7 @@ function StatCard({
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-zinc-500">{note}</p>
+      <p className="mt-3 text-xs text-muted-foreground">{note}</p>
     </div>
   );
 }

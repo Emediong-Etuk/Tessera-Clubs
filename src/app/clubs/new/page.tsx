@@ -6,6 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import type { TesseraToken } from "@/lib/tessera";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
 import { BackLink } from "@/components/BackLink";
+import { buttonClass, cardClass, inputClass } from "@/lib/ui";
 
 export default function NewClubPage() {
   const { publicKey, connected } = useWallet();
@@ -66,38 +67,34 @@ export default function NewClubPage() {
   return (
     <div className="mx-auto max-w-lg">
       <BackLink href="/" label="Home" />
-      <h1 className="mb-2 text-2xl font-bold">Create a club</h1>
-      <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+      <h1 className="mb-2 text-2xl font-semibold tracking-tight">Create a club</h1>
+      <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
         You&apos;ll get a shareable invite code. Anyone with the link can join and
         contribute -- the club wallet pools everyone&apos;s USDC until you trigger the batched
         buy.
       </p>
 
       {!connected && (
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+        <div className="mb-4 rounded-2xl border border-warn/30 bg-warn-soft p-3 text-sm text-warn">
           Connect your wallet (top right) to create a club -- you become its first member.
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm font-medium">
+      <form onSubmit={handleSubmit} className={cardClass("flex flex-col gap-5")}>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Club name
           <input
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="OpenAI Builders Club"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900"
+            className={inputClass()}
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Target T-Token
-          <select
-            value={targetTokenMint}
-            onChange={(e) => setTargetTokenMint(e.target.value)}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900"
-          >
+          <select value={targetTokenMint} onChange={(e) => setTargetTokenMint(e.target.value)} className={inputClass()}>
             {tokens.length > 0
               ? tokens.map((t) => (
                   <option key={t.mint} value={t.mint}>
@@ -112,7 +109,7 @@ export default function NewClubPage() {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Funding goal (USD, optional)
           <input
             type="number"
@@ -121,17 +118,13 @@ export default function NewClubPage() {
             value={fundingGoalUsd}
             onChange={(e) => setFundingGoalUsd(e.target.value)}
             placeholder="e.g. 100"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900"
+            className={inputClass()}
           />
         </label>
 
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting || !connected}
-          className="mt-2 rounded-lg bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900"
-        >
+        <button type="submit" disabled={submitting || !connected} className={buttonClass("primary", "lg", "mt-1")}>
           {submitting ? "Creating..." : "Create club"}
         </button>
       </form>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TesseraToken } from "@/lib/tessera";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
 import { formatUsd } from "@/lib/format";
+import { badgeClass, cardClass } from "@/lib/ui";
 
 // Tessera's public API is occasionally flaky (a transient 500, observed
 // live during this project) -- when the initial server-rendered fetch
@@ -84,14 +85,14 @@ export function TokenPriceGrid({
   return (
     <div>
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="mb-4 rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
           <p>
             Couldn&apos;t reach Tessera&apos;s API right now ({error}). Known mints:{" "}
             {Object.entries(KNOWN_TESSERA_TOKENS)
               .map(([sym, mint]) => `${sym} (${mint.slice(0, 6)}...)`)
               .join(", ")}
           </p>
-          <p className="mt-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+          <p className="mt-2 flex items-center gap-2 text-xs opacity-90">
             {retrying ? "Retrying..." : "Will retry automatically."}
             <button onClick={retryNow} disabled={retrying} className="underline underline-offset-2 disabled:opacity-50">
               Retry now
@@ -101,14 +102,11 @@ export function TokenPriceGrid({
       )}
       <div className="grid gap-4 sm:grid-cols-3">
         {tokens.map((t) => (
-          <div
-            key={t.mint}
-            className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
-          >
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">{t.sector}</div>
-            <div className="mb-3 text-lg font-semibold">{t.name}</div>
-            <div className="text-2xl font-bold">{formatUsd(t.markPrice)}</div>
-            <div className="mt-1 text-xs text-zinc-500">{t.holders.toLocaleString()} holders</div>
+          <div key={t.mint} className={cardClass("hover:-translate-y-0.5")}>
+            <span className={badgeClass("neutral", "mb-3")}>{t.sector}</span>
+            <div className="mb-1 text-lg font-semibold">{t.name}</div>
+            <div className="text-2xl font-semibold tracking-tight">{formatUsd(t.markPrice)}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{t.holders.toLocaleString()} holders</div>
           </div>
         ))}
       </div>

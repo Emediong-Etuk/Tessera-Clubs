@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
+/*
+  Design tokens. Every color a page uses lives here as a CSS variable that
+  changes value under the dark-mode media query -- so components reference
+  a single class like `border-border` or `bg-surface` instead of pairing
+  every className with a `dark:` variant. Palette is intentionally muted
+  (sage/teal accent, warm neutrals, soft sand/terracotta for
+  warning/danger) rather than saturated brand colors.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf9f6;
+  --surface: #ffffff;
+  --surface-muted: #f1efea;
+  --border: #e6e2d8;
+  --foreground: #23211d;
+  --muted-foreground: #706a5c;
+
+  --accent: #4c8c82;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e3eeec;
+
+  --warn: #a3803f;
+  --warn-foreground: #ffffff;
+  --warn-soft: #f5eee1;
+
+  --danger: #b5695c;
+  --danger-foreground: #ffffff;
+  --danger-soft: #f6e9e6;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
   --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-warn-soft: var(--warn-soft);
+
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-soft: var(--danger-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #17181a;
+    --surface: #1e2022;
+    --surface-muted: #26282a;
+    --border: #34363a;
+    --foreground: #ecebe6;
+    --muted-foreground: #a19c90;
+
+    --accent: #6fb3a6;
+    --accent-foreground: #0e1f1c;
+    --accent-soft: #1f2d2b;
+
+    --warn: #d1ac72;
+    --warn-foreground: #241d10;
+    --warn-soft: #2b2417;
+
+    --danger: #d08b7d;
+    --danger-foreground: #2a140f;
+    --danger-soft: #2c1c19;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
+}
+
+/* Restyle wallet-adapter's default (fairly saturated purple) button to
+   match this app's muted accent instead of shipping two color languages. */
+.wallet-adapter-button {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border-radius: 0.75rem !important;
+  font-family: inherit !important;
+  transition: opacity 0.15s ease-out !important;
+}
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: var(--accent) !important;
+  opacity: 0.9;
+}
+.wallet-adapter-modal,
+.wallet-adapter-modal-list-more {
+  color: var(--foreground);
+}
+.wallet-adapter-modal-wrapper {
+  background: var(--surface) !important;
+  color: var(--foreground) !important;
+}
+.wallet-adapter-modal-button-close {
+  background: var(--surface-muted) !important;
+}
+.wallet-adapter-modal-title {
+  color: var(--foreground) !important;
 }

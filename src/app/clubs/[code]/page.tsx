@@ -14,6 +14,7 @@ import { USDC_MINT } from "@/lib/constants";
 import { explorerUrl, formatToken, formatUsd, truncateAddress } from "@/lib/format";
 import { BackLink } from "@/components/BackLink";
 import { NavLink } from "@/components/NavLink";
+import { badgeClass, buttonClass, cardClass, inputClass } from "@/lib/ui";
 
 interface Member {
   membershipId: string;
@@ -212,10 +213,10 @@ export default function ClubDashboardPage() {
   }
 
   if (loadError) {
-    return <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>;
+    return <p className="text-sm text-danger">{loadError}</p>;
   }
   if (!club) {
-    return <p className="text-sm text-zinc-500">Loading club...</p>;
+    return <p className="text-sm text-muted-foreground">Loading club...</p>;
   }
 
   const goalPct = club.fundingGoalUsd
@@ -227,18 +228,15 @@ export default function ClubDashboardPage() {
       <section className="flex flex-col gap-2">
         <BackLink href="/" label="Home" />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-2xl font-bold">{club.name}</h1>
-          <button
-            onClick={copyInviteLink}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-          >
+          <h1 className="text-2xl font-semibold tracking-tight">{club.name}</h1>
+          <button onClick={copyInviteLink} className={buttonClass("secondary", "sm")}>
             Copy invite link ({club.inviteCode})
           </button>
         </div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Target: {club.targetTokenSymbol} &middot; Club wallet:{" "}
           <a
-            className="underline underline-offset-2"
+            className="underline underline-offset-2 hover:text-foreground"
             href={explorerUrl(club.clubWalletAddress, "address")}
             target="_blank"
             rel="noreferrer"
@@ -249,7 +247,7 @@ export default function ClubDashboardPage() {
         <p className="text-sm">
           Club wallet SOL balance: <span className="font-medium">{club.clubWalletSolBalance.toFixed(4)} SOL</span>
           {club.clubWalletSolBalance < 0.01 && (
-            <span className="ml-2 text-amber-700 dark:text-amber-400">
+            <span className="ml-2 text-warn">
               &mdash; too low. The club wallet pays its own network fees for the batched buy and every
               exit payout, but it only ever receives USDC from contributions. Send it ~0.02-0.05 SOL
               directly (to the address above) before clicking &quot;Buy&quot; or a member tries to leave,
@@ -258,23 +256,23 @@ export default function ClubDashboardPage() {
           )}
         </p>
         <div className="flex flex-wrap gap-4">
-          <NavLink href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">
+          <NavLink href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-accent underline underline-offset-2">
             View the solo-vs-club savings comparison &rarr;
           </NavLink>
-          <NavLink href={`/clubs/${club.inviteCode}/public`} className="text-sm font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300">
+          <NavLink href={`/clubs/${club.inviteCode}/public`} className="text-sm font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground">
             Share a read-only view &rarr;
           </NavLink>
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <section className={cardClass()}>
         <div className="mb-3 flex items-baseline justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wide text-zinc-500">Pending pool (not yet bought)</div>
-            <div className="text-3xl font-bold">{formatUsd(club.pendingPoolUsdc)}</div>
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">Pending pool (not yet bought)</div>
+            <div className="text-3xl font-semibold tracking-tight">{formatUsd(club.pendingPoolUsdc)}</div>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase tracking-wide text-zinc-500">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
               {club.targetTokenSymbol} held by club
             </div>
             <div className="text-xl font-semibold">{formatToken(club.tTokenBalance)}</div>
@@ -282,10 +280,10 @@ export default function ClubDashboardPage() {
         </div>
         {goalPct !== null && (
           <div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-              <div className="h-full bg-emerald-500" style={{ width: `${goalPct}%` }} />
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+              <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${goalPct}%` }} />
             </div>
-            <div className="mt-1 text-xs text-zinc-500">
+            <div className="mt-1 text-xs text-muted-foreground">
               {formatUsd(club.pendingPoolUsdc)} of {formatUsd(club.fundingGoalUsd!)} goal
             </div>
           </div>
@@ -293,36 +291,30 @@ export default function ClubDashboardPage() {
         <button
           onClick={handleExecute}
           disabled={busy !== null || club.pendingPoolUsdc <= 0}
-          className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+          className={buttonClass("primary", "lg", "mt-4 w-full")}
         >
           {busy === "execute" ? "Executing swap..." : `Buy ${club.targetTokenSymbol} with pooled funds`}
         </button>
       </section>
 
       {actionMessage && (
-        <p
-          className={`text-sm ${actionMessage.kind === "ok" ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
-        >
+        <p className={`text-sm ${actionMessage.kind === "ok" ? "text-accent" : "text-danger"}`}>
           {actionMessage.text}
         </p>
       )}
 
-      <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <section className={cardClass()}>
         <h2 className="mb-3 font-semibold">Your membership</h2>
-        {!publicKey && <p className="text-sm text-zinc-500">Connect your wallet to join or contribute.</p>}
+        {!publicKey && <p className="text-sm text-muted-foreground">Connect your wallet to join or contribute.</p>}
         {publicKey && !isMember && (
-          <button
-            onClick={handleJoin}
-            disabled={busy !== null}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900"
-          >
+          <button onClick={handleJoin} disabled={busy !== null} className={buttonClass("primary")}>
             {busy === "join" ? "Joining..." : "Join this club"}
           </button>
         )}
         {publicKey && isMember && !myMembership?.hasExited && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-1 text-sm font-medium">
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
                 Contribute USDC
                 <input
                   type="number"
@@ -330,25 +322,21 @@ export default function ClubDashboardPage() {
                   step="1"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-32 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                  className={inputClass("w-32")}
                 />
               </label>
-              <button
-                onClick={handleContribute}
-                disabled={busy !== null}
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-white dark:text-zinc-900"
-              >
+              <button onClick={handleContribute} disabled={busy !== null} className={buttonClass("primary")}>
                 {busy === "contribute" ? "Sending USDC..." : "Send contribution"}
               </button>
             </div>
 
-            <div className="flex flex-wrap items-end gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-              <label className="flex flex-col gap-1 text-sm font-medium">
+            <div className="flex flex-wrap items-end gap-2 border-t border-border pt-4">
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
                 Exit payout as
                 <select
                   value={payoutType}
                   onChange={(e) => setPayoutType(e.target.value as "USDC" | "TTOKEN")}
-                  className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                  className={inputClass()}
                 >
                   <option value="USDC">USDC</option>
                   <option value="TTOKEN">{club.targetTokenSymbol}</option>
@@ -357,47 +345,47 @@ export default function ClubDashboardPage() {
               <button
                 onClick={handleExit}
                 disabled={busy !== null || (myMembership?.entitlementPct ?? 0) <= 0}
-                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+                className={buttonClass("danger")}
               >
                 {busy === "exit" ? "Exiting..." : "Leave club"}
               </button>
             </div>
           </div>
         )}
-        {myMembership?.hasExited && <p className="text-sm text-zinc-500">You have already exited this club.</p>}
+        {myMembership?.hasExited && <p className="text-sm text-muted-foreground">You have already exited this club.</p>}
       </section>
 
       <section>
         <h2 className="mb-3 font-semibold">Members ({club.members.length})</h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-2">Wallet</th>
-                <th className="px-4 py-2">Contributed</th>
-                <th className="px-4 py-2">Pending</th>
-                <th className="px-4 py-2">Share</th>
-                <th className="px-4 py-2">Est. {club.targetTokenSymbol}</th>
+                <th className="px-4 py-2.5">Wallet</th>
+                <th className="px-4 py-2.5">Contributed</th>
+                <th className="px-4 py-2.5">Pending</th>
+                <th className="px-4 py-2.5">Share</th>
+                <th className="px-4 py-2.5">Est. {club.targetTokenSymbol}</th>
               </tr>
             </thead>
             <tbody>
               {club.members.map((m) => (
-                <tr key={m.membershipId} className="border-t border-zinc-200 dark:border-zinc-800">
-                  <td className="px-4 py-2">
+                <tr key={m.membershipId} className="border-t border-border transition-colors hover:bg-surface-muted/60">
+                  <td className="px-4 py-2.5">
                     <a
-                      className="underline underline-offset-2"
+                      className="underline underline-offset-2 hover:text-accent"
                       href={explorerUrl(m.walletAddress, "address")}
                       target="_blank"
                       rel="noreferrer"
                     >
                       {truncateAddress(m.walletAddress)}
                     </a>
-                    {m.hasExited && <span className="ml-2 text-xs text-zinc-400">(exited)</span>}
+                    {m.hasExited && <span className={badgeClass("neutral", "ml-2")}>exited</span>}
                   </td>
-                  <td className="px-4 py-2">{formatUsd(m.totalContributedUsdc)}</td>
-                  <td className="px-4 py-2">{formatUsd(m.pendingContributionUsdc)}</td>
-                  <td className="px-4 py-2">{(m.entitlementPct * 100).toFixed(1)}%</td>
-                  <td className="px-4 py-2">{formatToken(m.estimatedTTokenAmount)}</td>
+                  <td className="px-4 py-2.5">{formatUsd(m.totalContributedUsdc)}</td>
+                  <td className="px-4 py-2.5">{formatUsd(m.pendingContributionUsdc)}</td>
+                  <td className="px-4 py-2.5">{(m.entitlementPct * 100).toFixed(1)}%</td>
+                  <td className="px-4 py-2.5">{formatToken(m.estimatedTTokenAmount)}</td>
                 </tr>
               ))}
             </tbody>
@@ -431,11 +419,11 @@ function TxHistory({ code }: { code: string }) {
         {events.map((e, i) => (
           <li
             key={i}
-            className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-2 dark:border-zinc-800"
+            className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2.5 transition-shadow hover:shadow-sm"
           >
             <span className="capitalize">{e.type}</span>
-            <span className="text-zinc-500">{new Date(e.at).toLocaleString()}</span>
-            <a className="underline underline-offset-2" href={e.explorerUrl} target="_blank" rel="noreferrer">
+            <span className="text-muted-foreground">{new Date(e.at).toLocaleString()}</span>
+            <a className="underline underline-offset-2 hover:text-accent" href={e.explorerUrl} target="_blank" rel="noreferrer">
               View on Explorer
             </a>
           </li>

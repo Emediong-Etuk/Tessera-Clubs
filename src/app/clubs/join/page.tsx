@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BackLink } from "@/components/BackLink";
+import { buttonClass, cardClass, inputClass } from "@/lib/ui";
 
 export default function JoinClubPage() {
   const [code, setCode] = useState("");
@@ -16,21 +17,18 @@ export default function JoinClubPage() {
   return (
     <div className="mx-auto max-w-md">
       <BackLink href="/" label="Home" />
-      <h1 className="mb-2 text-2xl font-bold">Join a club</h1>
-      <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+      <h1 className="mb-2 text-2xl font-semibold tracking-tight">Join a club</h1>
+      <p className="mb-6 text-sm text-muted-foreground">
         Enter the invite code someone shared with you.
       </p>
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className={cardClass("flex gap-2")}>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="e.g. K7QX2WM"
-          className="flex-1 rounded-lg border border-zinc-300 px-3 py-3 text-base uppercase tracking-widest dark:border-zinc-700 dark:bg-zinc-900"
+          className={inputClass("flex-1 uppercase tracking-widest")}
         />
-        <button
-          type="submit"
-          className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
-        >
+        <button type="submit" className={buttonClass("primary", "lg")}>
           Go
         </button>
       </form>

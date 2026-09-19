@@ -27,12 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <WalletProviders>
           <DisclaimerBanner />
           <SiteHeader />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
-          <footer className="border-t border-zinc-200 px-4 py-6 text-center text-xs text-zinc-500 dark:border-zinc-800">
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:py-14">{children}</main>
+          <footer className="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
             Built for the Tessera &quot;Private Equities for Everyone&quot; hackathon track.
             Not investment advice. Hackathon MVP &mdash; see custody disclaimer above.
           </footer>
