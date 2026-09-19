@@ -1,18 +1,11 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { getTesseraTokens } from "@/lib/tessera";
 import { TokenPriceGrid } from "@/components/TokenPriceGrid";
+import { NavLink } from "@/components/NavLink";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  let tokens: Awaited<ReturnType<typeof getTesseraTokens>> = [];
-  let fetchError: string | null = null;
-  try {
-    tokens = await getTesseraTokens();
-  } catch (err) {
-    fetchError = err instanceof Error ? err.message : "Could not reach Tessera's API";
-  }
-
+export default function Home() {
   return (
     <div className="flex flex-col gap-16">
       <section className="flex flex-col gap-6 pt-6 text-center sm:pt-12">
@@ -27,18 +20,18 @@ export default async function Home() {
           access to efficient recurring exposure to pre-IPO T-Tokens.
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
+          <NavLink
             href="/clubs/new"
             className="rounded-lg bg-zinc-900 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900"
           >
             Create a club
-          </Link>
-          <Link
+          </NavLink>
+          <NavLink
             href="/clubs/join"
             className="rounded-lg border border-zinc-300 px-6 py-3 text-sm font-semibold hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
           >
             Join with an invite code
-          </Link>
+          </NavLink>
         </div>
       </section>
 
@@ -46,7 +39,13 @@ export default async function Home() {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
           Live T-Token prices, from Tessera&apos;s public token-details API
         </h2>
-        <TokenPriceGrid initialTokens={tokens} initialError={fetchError} />
+        {/* The hero above and its buttons render and hydrate immediately;
+            only this section waits on Tessera's (occasionally slow/flaky)
+            API, so a slow token-price fetch can no longer delay the whole
+            page -- including making the nav buttons feel unresponsive. */}
+        <Suspense fallback={<TokenGridSkeleton />}>
+          <TokenPriceSection />
+        </Suspense>
       </section>
 
       <section className="grid gap-6 sm:grid-cols-4">
@@ -63,6 +62,30 @@ export default async function Home() {
           </div>
         ))}
       </section>
+    </div>
+  );
+}
+
+async function TokenPriceSection() {
+  let tokens: Awaited<ReturnType<typeof getTesseraTokens>> = [];
+  let fetchError: string | null = null;
+  try {
+    tokens = await getTesseraTokens();
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : "Could not reach Tessera's API";
+  }
+  return <TokenPriceGrid initialTokens={tokens} initialError={fetchError} />;
+}
+
+function TokenGridSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="h-[104px] animate-pulse rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+        />
+      ))}
     </div>
   );
 }

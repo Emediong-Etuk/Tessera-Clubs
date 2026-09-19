@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { TesseraToken } from "@/lib/tessera";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
+import { BackLink } from "@/components/BackLink";
 
 export default function NewClubPage() {
   const { publicKey, connected } = useWallet();
@@ -64,6 +65,7 @@ export default function NewClubPage() {
 
   return (
     <div className="mx-auto max-w-lg">
+      <BackLink href="/" label="Home" />
       <h1 className="mb-2 text-2xl font-bold">Create a club</h1>
       <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
         You&apos;ll get a shareable invite code. Anyone with the link can join and

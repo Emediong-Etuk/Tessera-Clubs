@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { NavLink } from "./NavLink";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -19,12 +20,12 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-4 text-sm">
-          <Link href="/clubs/new" className="hidden font-medium hover:underline sm:inline">
+          <NavLink href="/clubs/new" className="hidden font-medium hover:underline sm:inline">
             Create a club
-          </Link>
-          <Link href="/clubs/join" className="hidden font-medium hover:underline sm:inline">
+          </NavLink>
+          <NavLink href="/clubs/join" className="hidden font-medium hover:underline sm:inline">
             Join a club
-          </Link>
+          </NavLink>
           <WalletMultiButton style={{ height: 40, fontSize: 14 }} />
         </nav>
       </div>

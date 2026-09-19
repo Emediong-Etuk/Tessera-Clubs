@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getClubByCodeOrId,
@@ -7,6 +6,8 @@ import {
   getPendingPoolTotal,
 } from "@/lib/club";
 import { explorerUrl, formatToken, formatUsd, truncateAddress } from "@/lib/format";
+import { BackLink } from "@/components/BackLink";
+import { NavLink } from "@/components/NavLink";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function PublicClubPage({ params }: { params: Promise<{ cod
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
+        <BackLink href="/" label="Home" />
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Read-only club view</p>
         <h1 className="text-2xl font-bold">{club.name}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -97,12 +99,12 @@ export default async function PublicClubPage({ params }: { params: Promise<{ cod
         server-controlled wallet, not a trustless on-chain vault.
       </section>
 
-      <Link
+      <NavLink
         href={`/clubs/${club.inviteCode}`}
         className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
       >
         Join or manage this club &rarr;
-      </Link>
+      </NavLink>
     </div>
   );
 }

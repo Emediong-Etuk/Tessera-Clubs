@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BackLink } from "@/components/BackLink";
 
 export default function JoinClubPage() {
   const [code, setCode] = useState("");
@@ -14,6 +15,7 @@ export default function JoinClubPage() {
 
   return (
     <div className="mx-auto max-w-md">
+      <BackLink href="/" label="Home" />
       <h1 className="mb-2 text-2xl font-bold">Join a club</h1>
       <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
         Enter the invite code someone shared with you.

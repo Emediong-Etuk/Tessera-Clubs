@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { formatPct, formatToken, formatUsd, formatUsdPrecise } from "@/lib/format";
+import { BackLink } from "@/components/BackLink";
 
 interface Comparison {
   individualTotalTTokens: number;
@@ -78,9 +78,7 @@ export default function SavingsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Link href={`/clubs/${code}`} className="text-sm text-zinc-500 underline underline-offset-2">
-          &larr; Back to {club?.name ?? "club"}
-        </Link>
+        <BackLink href={`/clubs/${code}`} label={`Back to ${club?.name ?? "club"}`} />
         <h1 className="mt-2 text-2xl font-bold">Solo vs. Club: what pooling actually costs</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Every number below comes from a live quote fetched from Jupiter (the aggregator

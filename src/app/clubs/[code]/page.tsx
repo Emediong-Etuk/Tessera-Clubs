@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, Transaction } from "@solana/web3.js";
@@ -13,6 +12,8 @@ import {
 } from "@solana/spl-token";
 import { USDC_MINT } from "@/lib/constants";
 import { explorerUrl, formatToken, formatUsd, truncateAddress } from "@/lib/format";
+import { BackLink } from "@/components/BackLink";
+import { NavLink } from "@/components/NavLink";
 
 interface Member {
   membershipId: string;
@@ -224,6 +225,7 @@ export default function ClubDashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
+        <BackLink href="/" label="Home" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-bold">{club.name}</h1>
           <button
@@ -256,12 +258,12 @@ export default function ClubDashboardPage() {
           )}
         </p>
         <div className="flex flex-wrap gap-4">
-          <Link href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">
+          <NavLink href={`/clubs/${club.inviteCode}/savings`} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-400">
             View the solo-vs-club savings comparison &rarr;
-          </Link>
-          <Link href={`/clubs/${club.inviteCode}/public`} className="text-sm font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300">
+          </NavLink>
+          <NavLink href={`/clubs/${club.inviteCode}/public`} className="text-sm font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300">
             Share a read-only view &rarr;
-          </Link>
+          </NavLink>
         </div>
       </section>
 
