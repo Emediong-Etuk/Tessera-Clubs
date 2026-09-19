@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getTesseraTokens, KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
-import { formatUsd } from "@/lib/format";
+import { getTesseraTokens } from "@/lib/tessera";
+import { TokenPriceGrid } from "@/components/TokenPriceGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -46,29 +46,7 @@ export default async function Home() {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
           Live T-Token prices, from Tessera&apos;s public token-details API
         </h2>
-        {fetchError && (
-          <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-            Couldn&apos;t reach Tessera&apos;s API right now ({fetchError}). Known mints:{" "}
-            {Object.entries(KNOWN_TESSERA_TOKENS)
-              .map(([sym, mint]) => `${sym} (${mint.slice(0, 6)}...)`)
-              .join(", ")}
-          </p>
-        )}
-        <div className="grid gap-4 sm:grid-cols-3">
-          {tokens.map((t) => (
-            <div
-              key={t.mint}
-              className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
-            >
-              <div className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {t.sector}
-              </div>
-              <div className="mb-3 text-lg font-semibold">{t.name}</div>
-              <div className="text-2xl font-bold">{formatUsd(t.markPrice)}</div>
-              <div className="mt-1 text-xs text-zinc-500">{t.holders.toLocaleString()} holders</div>
-            </div>
-          ))}
-        </div>
+        <TokenPriceGrid initialTokens={tokens} initialError={fetchError} />
       </section>
 
       <section className="grid gap-6 sm:grid-cols-4">
