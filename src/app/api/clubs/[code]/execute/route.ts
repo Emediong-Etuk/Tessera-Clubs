@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { buildSavingsPreview, getClubByCodeOrId } from "@/lib/club";
 import { getConnection, loadClubKeypair } from "@/lib/solana";
 import { getSwapTransaction } from "@/lib/jupiter";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 // Triggers the ONE batched swap for the club's entire pending USDC pool.
 // This is a real mainnet transaction signed by the custodial club wallet
@@ -18,10 +19,8 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
   try {
     preview = await buildSavingsPreview(club);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to fetch a live quote" },
-      { status: 502 }
-    );
+    console.error("Failed to build savings preview before execute for club", club.id, err);
+    return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
   if (!preview) {
     return NextResponse.json({ error: "No pending contributions to execute" }, { status: 400 });
@@ -50,15 +49,8 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
       "confirmed"
     );
   } catch (err) {
-    return NextResponse.json(
-      {
-        error:
-          "On-chain swap failed: " +
-          (err instanceof Error ? err.message : String(err)) +
-          ". The club wallet needs enough SOL for network fees and the pending USDC must actually be present.",
-      },
-      { status: 502 }
-    );
+    console.error("Batched buy failed for club", club.id, err);
+    return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
 
   // Read back the real balance change rather than trusting the quote --

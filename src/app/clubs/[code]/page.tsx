@@ -15,6 +15,7 @@ import { explorerUrl, formatToken, formatUsd, truncateAddress } from "@/lib/form
 import { BackLink } from "@/components/BackLink";
 import { NavLink } from "@/components/NavLink";
 import { badgeClass, buttonClass, cardClass, inputClass } from "@/lib/ui";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 interface Member {
   membershipId: string;
@@ -98,7 +99,7 @@ export default function ClubDashboardPage() {
       setActionMessage({ kind: "ok", text: "Joined the club." });
       await refresh();
     } catch (err) {
-      setActionMessage({ kind: "error", text: err instanceof Error ? err.message : "Failed to join" });
+      setActionMessage({ kind: "error", text: humanizeChainError(err) });
     } finally {
       setBusy(null);
     }
@@ -174,11 +175,7 @@ export default function ClubDashboardPage() {
       await refresh();
     } catch (err) {
       console.error("Contribution failed:", err);
-      let message = err instanceof Error ? err.message : "Contribution failed. Make sure your wallet holds USDC and has SOL for fees.";
-      if (message.length > 200) {
-        message = message.slice(0, 180) + "... (full details logged to the browser console)";
-      }
-      setActionMessage({ kind: "error", text: message });
+      setActionMessage({ kind: "error", text: humanizeChainError(err) });
     } finally {
       setBusy(null);
     }
@@ -197,7 +194,8 @@ export default function ClubDashboardPage() {
       });
       await refresh();
     } catch (err) {
-      setActionMessage({ kind: "error", text: err instanceof Error ? err.message : "Execution failed" });
+      console.error("Batched buy failed:", err);
+      setActionMessage({ kind: "error", text: humanizeChainError(err) });
     } finally {
       setBusy(null);
     }
@@ -221,7 +219,8 @@ export default function ClubDashboardPage() {
       });
       await refresh();
     } catch (err) {
-      setActionMessage({ kind: "error", text: err instanceof Error ? err.message : "Exit failed" });
+      console.error("Exit failed:", err);
+      setActionMessage({ kind: "error", text: humanizeChainError(err) });
     } finally {
       setBusy(null);
     }
@@ -319,9 +318,16 @@ export default function ClubDashboardPage() {
       </section>
 
       {actionMessage && (
-        <p className={`text-sm ${actionMessage.kind === "ok" ? "text-accent" : "text-danger"}`}>
+        <div
+          role={actionMessage.kind === "error" ? "alert" : "status"}
+          className={`animate-fade-up rounded-2xl border p-4 text-sm ${
+            actionMessage.kind === "ok"
+              ? "border-accent/30 bg-accent-soft text-accent"
+              : "border-danger/30 bg-danger-soft text-danger"
+          }`}
+        >
           {actionMessage.text}
-        </p>
+        </div>
       )}
 
       <section className={cardClass()}>

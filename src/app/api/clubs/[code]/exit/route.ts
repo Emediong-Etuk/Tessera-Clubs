@@ -19,6 +19,7 @@ import {
   loadClubKeypair,
 } from "@/lib/solana";
 import { USDC_MINT, getQuote, getSwapTransaction } from "@/lib/jupiter";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 export async function POST(req: Request, ctx: { params: Promise<{ code: string }> }) {
   const { code } = await ctx.params;
@@ -106,10 +107,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     });
     return NextResponse.json(toExitResponse(exit));
   } catch (err) {
-    return NextResponse.json(
-      { error: "Exit payout failed: " + (err instanceof Error ? err.message : String(err)) },
-      { status: 502 }
-    );
+    console.error("Exit payout failed for club", club.id, "membership", membership.id, err);
+    return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
 }
 

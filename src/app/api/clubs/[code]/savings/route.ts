@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildSavingsPreview, getClubByCodeOrId } from "@/lib/club";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 // The centerpiece screen's data source. Everything returned here traces
 // back to a live Jupiter quote call or a live Solana RPC call made just
@@ -22,9 +23,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ code: string }
       comparison: preview.comparison,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to compute savings comparison" },
-      { status: 502 }
-    );
+    console.error("Failed to compute savings preview for club", club.id, err);
+    return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
 }
