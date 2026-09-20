@@ -119,6 +119,25 @@ export default function ClubDashboardPage() {
       const fromAta = await getAssociatedTokenAddress(usdcMint, publicKey, false, TOKEN_PROGRAM_ID);
       const toAta = await getAssociatedTokenAddress(usdcMint, clubWallet, false, TOKEN_PROGRAM_ID);
 
+      // Check the sender actually holds enough USDC before building a
+      // transaction -- transferChecked from a wallet with no USDC account
+      // at all fails on-chain with a cryptic "InvalidAccountData" that's
+      // much less clear than catching it here first.
+      let usdcBalance = 0;
+      try {
+        const bal = await connection.getTokenAccountBalance(fromAta);
+        usdcBalance = bal.value.uiAmount ?? 0;
+      } catch {
+        usdcBalance = 0; // account doesn't exist -- this wallet has never held USDC
+      }
+      if (usdcBalance < amountUsdc) {
+        throw new Error(
+          usdcBalance === 0
+            ? "This wallet doesn't hold any USDC yet. Get some real USDC into it first (e.g. swap SOL for USDC in your wallet), then try again."
+            : `This wallet only holds ${formatUsd(usdcBalance)} USDC, less than the ${formatUsd(amountUsdc)} you're trying to send.`
+        );
+      }
+
       const tx = new Transaction();
       tx.add(
         createAssociatedTokenAccountIdempotentInstruction(publicKey, toAta, clubWallet, usdcMint, TOKEN_PROGRAM_ID)
@@ -154,10 +173,12 @@ export default function ClubDashboardPage() {
       setActionMessage({ kind: "ok", text: `Contributed ${formatUsd(amountUsdc)}. Tx: ${signature.slice(0, 12)}...` });
       await refresh();
     } catch (err) {
-      setActionMessage({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Contribution failed. Make sure your wallet holds USDC and has SOL for fees.",
-      });
+      console.error("Contribution failed:", err);
+      let message = err instanceof Error ? err.message : "Contribution failed. Make sure your wallet holds USDC and has SOL for fees.";
+      if (message.length > 200) {
+        message = message.slice(0, 180) + "... (full details logged to the browser console)";
+      }
+      setActionMessage({ kind: "error", text: message });
     } finally {
       setBusy(null);
     }
