@@ -1,3 +1,22 @@
+# Housefile (Convex All Gas Hackathon)
+
+This repository's active build is **Housefile**, a property-knowledge
+layer for solo short-term-rental hosts, built for the Convex All Gas
+Hackathon. See [`hackathon.md`](./hackathon.md) for the build log.
+
+- Host dashboard: `/host` (import a listing, complete private facts,
+  create stays, run the inbox)
+- Public guest page: `/stays/[slug]`
+- Backend: `convex/` (schema, queries/mutations/actions, the AgentMail
+  webhook at `convex/http.ts`)
+
+The rest of this README, below, describes **Tessera Clubs**, this
+repo's prior project (a different, earlier hackathon). Its code is
+unchanged and still live, but it's no longer what's being actively
+built here.
+
+---
+
 # Tessera Clubs
 
 Pool a few small USDC contributions ($5-$20 each) into one aggregated

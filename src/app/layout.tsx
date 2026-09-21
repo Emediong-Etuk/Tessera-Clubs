@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { WalletProviders } from "@/components/WalletProviders";
-import { SiteHeader } from "@/components/SiteHeader";
-import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { AppChrome } from "@/components/AppChrome";
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,15 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black">
-        <WalletProviders>
-          <DisclaimerBanner />
-          <SiteHeader />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
-          <footer className="border-t border-zinc-200 px-4 py-6 text-center text-xs text-zinc-500 dark:border-zinc-800">
-            Built for the Tessera &quot;Private Equities for Everyone&quot; hackathon track.
-            Not investment advice. Hackathon MVP &mdash; see custody disclaimer above.
-          </footer>
-        </WalletProviders>
+        <ConvexClientProvider>
+          <AppChrome>{children}</AppChrome>
+        </ConvexClientProvider>
       </body>
     </html>
   );
