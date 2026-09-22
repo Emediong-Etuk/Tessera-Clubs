@@ -33,6 +33,12 @@ export function SiteHeader() {
           >
             Join a club
           </NavLink>
+          <NavLink
+            href="/clubs/mine"
+            className="hidden font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+          >
+            My clubs
+          </NavLink>
           <ThemeToggle />
           <WalletMultiButton style={{ height: 40, fontSize: 14 }} />
         </nav>
