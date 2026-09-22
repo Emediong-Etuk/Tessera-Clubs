@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { VersionedTransaction } from "@solana/web3.js";
 import { prisma } from "@/lib/prisma";
 import { buildSavingsPreview, getClubByCodeOrId } from "@/lib/club";
-import { getConnection, loadClubKeypair } from "@/lib/solana";
+import { getConnection, loadClubKeypair, sendJupiterSwapWithRetry } from "@/lib/solana";
 import { getSwapTransaction } from "@/lib/jupiter";
 import { humanizeChainError } from "@/lib/chainErrors";
 
@@ -31,23 +30,12 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
 
   let signature: string;
   try {
-    const { swapTransaction, lastValidBlockHeight } = await getSwapTransaction({
-      quote: preview.pooledQuote,
-      userPublicKey: club.clubWalletAddress,
+    signature = await sendJupiterSwapWithRetry({
+      conn,
+      signer: clubKeypair,
+      buildSwapTransaction: () =>
+        getSwapTransaction({ quote: preview.pooledQuote, userPublicKey: club.clubWalletAddress }),
     });
-
-    const tx = VersionedTransaction.deserialize(Buffer.from(swapTransaction, "base64"));
-    tx.sign([clubKeypair]);
-
-    signature = await conn.sendRawTransaction(tx.serialize(), {
-      skipPreflight: false,
-      maxRetries: 3,
-    });
-
-    await conn.confirmTransaction(
-      { signature, blockhash: tx.message.recentBlockhash, lastValidBlockHeight },
-      "confirmed"
-    );
   } catch (err) {
     console.error("Batched buy failed for club", club.id, err);
     return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });

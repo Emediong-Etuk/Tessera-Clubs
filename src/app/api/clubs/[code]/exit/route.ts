@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  Transaction,
-  PublicKey,
-  VersionedTransaction,
-  sendAndConfirmTransaction,
-} from "@solana/web3.js";
+import { Transaction, PublicKey, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferCheckedInstruction,
@@ -17,6 +12,7 @@ import {
   getMintDecimals,
   getProgramIdForMint,
   loadClubKeypair,
+  sendJupiterSwapWithRetry,
 } from "@/lib/solana";
 import { USDC_MINT, getQuote, getSwapTransaction } from "@/lib/jupiter";
 import { humanizeChainError } from "@/lib/chainErrors";
@@ -77,17 +73,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       outputMint: USDC_MINT,
       amount: Math.round(tTokenPayoutAmount * 10 ** (await getMintDecimals(club.targetTokenMint))),
     });
-    const { swapTransaction, lastValidBlockHeight } = await getSwapTransaction({
-      quote,
-      userPublicKey: club.clubWalletAddress,
+    await sendJupiterSwapWithRetry({
+      conn,
+      signer: clubKeypair,
+      buildSwapTransaction: () => getSwapTransaction({ quote, userPublicKey: club.clubWalletAddress }),
     });
-    const swapTx = VersionedTransaction.deserialize(Buffer.from(swapTransaction, "base64"));
-    swapTx.sign([clubKeypair]);
-    const swapSig = await conn.sendRawTransaction(swapTx.serialize(), { skipPreflight: false });
-    await conn.confirmTransaction(
-      { signature: swapSig, blockhash: swapTx.message.recentBlockhash, lastValidBlockHeight },
-      "confirmed"
-    );
 
     const usdcReceived = Number(quote.outAmount) / 1_000_000;
     const signature = await payoutTToken({

@@ -1,4 +1,4 @@
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import {
   ACCOUNT_SIZE,
   ExtensionType,
@@ -169,4 +169,47 @@ export async function getSolBalance(owner: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+const EXPIRY_PATTERN = /block height exceeded|blockhash not found|TransactionExpiredBlockheightExceededError/i;
+
+/**
+ * Every Solana transaction is only valid for a short window (~60-90s)
+ * after it's built -- if confirmation takes longer (network congestion, a
+ * slow RPC, a low priority fee), it expires even though nothing was
+ * actually wrong with it. Observed live in this project on a real batched
+ * buy. Rather than surfacing that as a failure the user has to manually
+ * retry, rebuild a transaction with a fresh blockhash and try again
+ * automatically a couple of times before giving up.
+ */
+export async function sendJupiterSwapWithRetry(params: {
+  conn: Connection;
+  signer: Keypair;
+  buildSwapTransaction: () => Promise<{ swapTransaction: string; lastValidBlockHeight: number }>;
+  maxAttempts?: number;
+}): Promise<string> {
+  const { conn, signer, buildSwapTransaction, maxAttempts = 3 } = params;
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const { swapTransaction, lastValidBlockHeight } = await buildSwapTransaction();
+    const tx = VersionedTransaction.deserialize(Buffer.from(swapTransaction, "base64"));
+    tx.sign([signer]);
+
+    try {
+      const signature = await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 3 });
+      await conn.confirmTransaction(
+        { signature, blockhash: tx.message.recentBlockhash, lastValidBlockHeight },
+        "confirmed"
+      );
+      return signature;
+    } catch (err) {
+      lastErr = err;
+      const message = err instanceof Error ? err.message : String(err);
+      const expired = EXPIRY_PATTERN.test(message);
+      if (!expired || attempt === maxAttempts) throw err;
+      // otherwise loop: rebuild with a fresh blockhash and try again
+    }
+  }
+  throw lastErr;
 }
