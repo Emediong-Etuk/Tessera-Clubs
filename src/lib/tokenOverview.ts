@@ -16,12 +16,13 @@ export interface TokenOverview {
 }
 
 /**
- * Merges Jupiter's real-time market data (price, 24h change, logo -- the
- * numbers that actually move) with Tessera's own token-details (sector,
- * holder count -- descriptive metadata Tessera itself tracks). Jupiter is
- * preferred for price specifically because it reflects real trading
- * activity; Tessera's own `markPrice` is used only as a fallback if
- * Jupiter is unreachable.
+ * Merges Jupiter's real-time market data (price, 24h change, logo, holder
+ * count -- the numbers that actually move) with Tessera's own
+ * token-details (sector -- descriptive metadata Tessera itself tracks but
+ * doesn't move). Jupiter is preferred for both price and holder count
+ * because they reflect real, live trading activity; Tessera's own
+ * `markPrice`/`holders` are slower-moving marks (confirmed static across
+ * repeated polling) used only as a fallback if Jupiter is unreachable.
  */
 export async function getTokenOverviews(): Promise<TokenOverview[]> {
   const mints = Object.values(KNOWN_TESSERA_TOKENS);
@@ -43,7 +44,7 @@ export async function getTokenOverviews(): Promise<TokenOverview[]> {
         icon: m.icon,
         usdPrice: m.usdPrice,
         priceChange24h: m.priceChange24h,
-        holders: tessera?.holders ?? m.holderCount,
+        holders: m.holderCount ?? tessera?.holders ?? null,
         priceSource: "jupiter",
       };
     });
