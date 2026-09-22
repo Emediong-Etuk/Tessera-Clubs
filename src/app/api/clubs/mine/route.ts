@@ -46,6 +46,10 @@ export async function GET(req: Request) {
     const hasExecutedPosition = m.club.contributions.some(
       (c) => c.membershipId === m.id && c.executionId !== null
     );
+    const refundedUsdc = m.club.contributions
+      .filter((c) => c.membershipId === m.id && c.refundedAt)
+      .reduce((sum, c) => sum + c.amountUsdc, 0);
+    const exit = m.exits[0] ?? null;
 
     return {
       inviteCode: m.club.inviteCode,
@@ -58,9 +62,21 @@ export async function GET(req: Request) {
       isCreator,
       pendingPoolUsdc,
       myContributedUsdc,
-      hasExited: m.exits.length > 0 || Boolean(m.leftAt),
+      hasExited: exit !== null || Boolean(m.leftAt),
       hasExecutedPosition,
       executionCount: m.club.executions.length,
+      // Populated only for clubs the member has left -- how they left, and
+      // with what, for the clubs/history page.
+      leftAt: m.leftAt,
+      refundedUsdc,
+      exit: exit
+        ? {
+            payoutType: exit.payoutType,
+            payoutAmount: exit.payoutAmount,
+            txSignature: exit.txSignature,
+            exitedAt: exit.exitedAt,
+          }
+        : null,
     };
   });
 

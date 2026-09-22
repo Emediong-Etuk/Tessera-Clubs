@@ -8,22 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { badgeClass, buttonClass, cardClass } from "@/lib/ui";
 import { formatUsd } from "@/lib/format";
 import { humanizeChainError } from "@/lib/chainErrors";
-
-interface MyClub {
-  inviteCode: string;
-  name: string;
-  status: "OPEN" | "EXECUTED" | "CLOSED";
-  targetTokenSymbol: string;
-  fundingGoalUsd: number | null;
-  createdAt: string;
-  joinedAt: string;
-  isCreator: boolean;
-  pendingPoolUsdc: number;
-  myContributedUsdc: number;
-  hasExited: boolean;
-  hasExecutedPosition: boolean;
-  executionCount: number;
-}
+import type { MyClub } from "@/lib/myClub";
 
 export default function MyClubsPage() {
   const { publicKey, connected } = useWallet();
@@ -98,13 +83,26 @@ export default function MyClubsPage() {
     }
   }
 
+  const activeClubs = clubs?.filter((c) => !c.hasExited) ?? null;
+  const leftCount = clubs ? clubs.length - (activeClubs?.length ?? 0) : 0;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <BackLink href="/" label="Home" />
-        <h1 className="text-2xl font-semibold tracking-tight">Your clubs</h1>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Your clubs</h1>
+          {leftCount > 0 && (
+            <NavLink
+              href="/clubs/history"
+              className="text-sm font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              View clubs you&apos;ve left ({leftCount}) &rarr;
+            </NavLink>
+          )}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every club your connected wallet created or joined.
+          Every club your connected wallet currently belongs to.
         </p>
       </div>
 
@@ -116,14 +114,14 @@ export default function MyClubsPage() {
 
       {connected && error && <p className="text-sm text-danger">{error}</p>}
 
-      {connected && !error && clubs === null && (
+      {connected && !error && activeClubs === null && (
         <p className="text-sm text-muted-foreground">Loading your clubs...</p>
       )}
 
-      {connected && clubs !== null && clubs.length === 0 && (
+      {connected && activeClubs !== null && activeClubs.length === 0 && (
         <div className={cardClass("text-center")}>
           <p className="mb-4 text-sm text-muted-foreground">
-            This wallet hasn&apos;t created or joined any clubs yet.
+            This wallet doesn&apos;t currently belong to any clubs.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <NavLink href="/clubs/new" className={buttonClass("primary")}>
@@ -136,9 +134,9 @@ export default function MyClubsPage() {
         </div>
       )}
 
-      {connected && clubs !== null && clubs.length > 0 && (
+      {connected && activeClubs !== null && activeClubs.length > 0 && (
         <div className="flex flex-col gap-4">
-          {clubs.map((club) => {
+          {activeClubs.map((club) => {
             const goalPct = club.fundingGoalUsd
               ? Math.min(100, (club.pendingPoolUsdc / club.fundingGoalUsd) * 100)
               : null;
@@ -156,7 +154,6 @@ export default function MyClubsPage() {
                       <span className={badgeClass(club.status === "OPEN" ? "accent" : "neutral")}>
                         {club.status === "OPEN" ? "Open" : club.status === "EXECUTED" ? "Executed" : "Closed"}
                       </span>
-                      {club.hasExited && <span className={badgeClass("warn")}>You exited</span>}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Target: {club.targetTokenSymbol} &middot; Invite code: {club.inviteCode} &middot; You
@@ -175,34 +172,32 @@ export default function MyClubsPage() {
                     </div>
                   </div>
                 )}
-                {!club.hasExited && (
-                  <div className="mt-3 border-t border-border pt-3">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (club.hasExecutedPosition) {
-                          setLeaveError(null);
-                          setLeavingClub(club);
-                        } else {
-                          quickLeave(club);
-                        }
-                      }}
-                      disabled={quickLeaveBusyCode === club.inviteCode}
-                      title={
-                        club.hasExecutedPosition
-                          ? undefined
-                          : "Nothing executed yet, so leaving just refunds any pending contribution -- no confirmation needed."
+                <div className="mt-3 border-t border-border pt-3">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (club.hasExecutedPosition) {
+                        setLeaveError(null);
+                        setLeavingClub(club);
+                      } else {
+                        quickLeave(club);
                       }
-                      className={buttonClass("danger", "sm")}
-                    >
-                      {quickLeaveBusyCode === club.inviteCode ? "Leaving..." : "Leave club"}
-                    </button>
-                    {quickLeaveError?.code === club.inviteCode && (
-                      <p className="mt-2 text-xs text-danger">{quickLeaveError.message}</p>
-                    )}
-                  </div>
-                )}
+                    }}
+                    disabled={quickLeaveBusyCode === club.inviteCode}
+                    title={
+                      club.hasExecutedPosition
+                        ? undefined
+                        : "Nothing executed yet, so leaving just refunds any pending contribution -- no confirmation needed."
+                    }
+                    className={buttonClass("danger", "sm")}
+                  >
+                    {quickLeaveBusyCode === club.inviteCode ? "Leaving..." : "Leave club"}
+                  </button>
+                  {quickLeaveError?.code === club.inviteCode && (
+                    <p className="mt-2 text-xs text-danger">{quickLeaveError.message}</p>
+                  )}
+                </div>
               </NavLink>
             );
           })}
