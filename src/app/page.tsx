@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getTesseraTokens } from "@/lib/tessera";
+import { getTokenOverviews } from "@/lib/tokenOverview";
 import { TokenPriceGrid } from "@/components/TokenPriceGrid";
 import { NavLink } from "@/components/NavLink";
 import { badgeClass, buttonClass, cardClass } from "@/lib/ui";
@@ -45,12 +45,12 @@ export default function Home() {
 
       <section>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Live T-Token prices, from Tessera&apos;s public token-details API
+          Live token prices, updating automatically
         </h2>
         {/* The hero above and its buttons render and hydrate immediately;
-            only this section waits on Tessera's (occasionally slow/flaky)
-            API, so a slow token-price fetch can no longer delay the whole
-            page -- including making the nav buttons feel unresponsive. */}
+            only this section waits on the price fetch, so a slow upstream
+            API can no longer delay the whole page -- including making the
+            nav buttons feel unresponsive. */}
         <Suspense fallback={<TokenGridSkeleton />}>
           <TokenPriceSection />
         </Suspense>
@@ -58,7 +58,7 @@ export default function Home() {
 
       <section className="grid gap-5 sm:grid-cols-4">
         {[
-          ["1", "Create or join a club", "Pool $5-$20 each toward one T-Token."],
+          ["1", "Create or join a club", "Pool $5-$20 each toward one token."],
           ["2", "Watch the pool fill up", "Everyone's contribution and share is on-chain and transparent."],
           ["3", "One batched buy", "The club executes a single swap for the full pooled amount."],
           ["4", "See the real savings", "Compare it to buying solo, using live quote data -- not a guess."],
@@ -75,12 +75,12 @@ export default function Home() {
 }
 
 async function TokenPriceSection() {
-  let tokens: Awaited<ReturnType<typeof getTesseraTokens>> = [];
+  let tokens: Awaited<ReturnType<typeof getTokenOverviews>> = [];
   let fetchError: string | null = null;
   try {
-    tokens = await getTesseraTokens();
+    tokens = await getTokenOverviews();
   } catch (err) {
-    fetchError = err instanceof Error ? err.message : "Could not reach Tessera's API";
+    fetchError = err instanceof Error ? err.message : "Could not reach live price sources";
   }
   return <TokenPriceGrid initialTokens={tokens} initialError={fetchError} />;
 }

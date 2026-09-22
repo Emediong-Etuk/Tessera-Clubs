@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import type { TesseraToken } from "@/lib/tessera";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
+import type { TokenOverview } from "@/lib/tokenOverview";
 import { BackLink } from "@/components/BackLink";
 import { buttonClass, cardClass, inputClass } from "@/lib/ui";
 
@@ -12,7 +12,7 @@ export default function NewClubPage() {
   const { publicKey, connected } = useWallet();
   const router = useRouter();
 
-  const [tokens, setTokens] = useState<TesseraToken[]>([]);
+  const [tokens, setTokens] = useState<TokenOverview[]>([]);
   const [name, setName] = useState("");
   const [targetTokenMint, setTargetTokenMint] = useState("");
   const [fundingGoalUsd, setFundingGoalUsd] = useState("");
@@ -49,7 +49,7 @@ export default function NewClubPage() {
         body: JSON.stringify({
           name,
           targetTokenMint,
-          targetTokenSymbol: selected?.symbol ?? "T-OpenAI",
+          targetTokenSymbol: selected?.name ?? "T-OpenAI",
           fundingGoalUsd: fundingGoalUsd ? Number(fundingGoalUsd) : undefined,
           creatorWalletAddress: publicKey.toBase58(),
         }),
@@ -93,12 +93,12 @@ export default function NewClubPage() {
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Target T-Token
+          Target token
           <select value={targetTokenMint} onChange={(e) => setTargetTokenMint(e.target.value)} className={inputClass()}>
             {tokens.length > 0
               ? tokens.map((t) => (
                   <option key={t.mint} value={t.mint}>
-                    {t.name} ({t.symbol})
+                    {t.name} (${t.symbol})
                   </option>
                 ))
               : Object.entries(KNOWN_TESSERA_TOKENS).map(([sym, mint]) => (

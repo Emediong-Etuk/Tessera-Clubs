@@ -76,6 +76,57 @@ export async function getSolPriceUsd(): Promise<number> {
   return Number(quote.outAmount) / 1_000_000; // USDC has 6 decimals
 }
 
+export interface JupiterTokenMarketInfo {
+  mint: string;
+  symbol: string;
+  name: string;
+  icon: string | null;
+  usdPrice: number;
+  priceChange24h: number | null;
+  holderCount: number | null;
+}
+
+/**
+ * Real-time market data (price, 24h change, logo) for a set of mints, via
+ * Jupiter's token search API. This is the same aggregator that routes
+ * every swap this app executes, so its price reflects actual trading
+ * activity -- unlike Tessera's own token-details `markPrice`, which is a
+ * slower-moving valuation mark that can sit unchanged for a day or more
+ * (confirmed by polling it repeatedly during this project). Jupiter also
+ * hosts the token icon Tessera itself uploaded, so it doubles as a real
+ * logo source with no extra API to integrate.
+ */
+export async function getTokenMarketData(mints: string[]): Promise<JupiterTokenMarketInfo[]> {
+  if (mints.length === 0) return [];
+  const url = new URL(`${BASE_URL}/tokens/v2/search`);
+  url.searchParams.set("query", mints.join(","));
+
+  const res = await fetch(url.toString(), { headers: headers(), cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Jupiter token search failed (${res.status}): ${body}`);
+  }
+  const data = (await res.json()) as Array<{
+    id: string;
+    symbol: string;
+    name: string;
+    icon?: string;
+    usdPrice?: number;
+    holderCount?: number;
+    stats24h?: { priceChange?: number };
+  }>;
+
+  return data.map((t) => ({
+    mint: t.id,
+    symbol: t.symbol,
+    name: t.name,
+    icon: t.icon ?? null,
+    usdPrice: t.usdPrice ?? 0,
+    priceChange24h: t.stats24h?.priceChange ?? null,
+    holderCount: t.holderCount ?? null,
+  }));
+}
+
 export async function getSwapTransaction(params: {
   quote: JupiterQuote;
   userPublicKey: string;

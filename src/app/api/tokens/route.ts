@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getTesseraTokens } from "@/lib/tessera";
+import { getTokenOverviews } from "@/lib/tokenOverview";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 export async function GET() {
   try {
-    const tokens = await getTesseraTokens();
+    const tokens = await getTokenOverviews();
     return NextResponse.json({ tokens });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to fetch Tessera tokens" },
-      { status: 502 }
-    );
+    console.error("Failed to fetch token overviews:", err);
+    return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
 }
