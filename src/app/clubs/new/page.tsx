@@ -6,6 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
 import type { TokenOverview } from "@/lib/tokenOverview";
 import { BackLink } from "@/components/BackLink";
+import { formatTicker } from "@/lib/format";
 import { buttonClass, cardClass, inputClass } from "@/lib/ui";
 
 export default function NewClubPage() {
@@ -98,7 +99,7 @@ export default function NewClubPage() {
             {tokens.length > 0
               ? tokens.map((t) => (
                   <option key={t.mint} value={t.mint}>
-                    {t.name} (${t.symbol})
+                    {t.name} (${formatTicker(t.symbol)})
                   </option>
                 ))
               : Object.entries(KNOWN_TESSERA_TOKENS).map(([sym, mint]) => (

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { TokenOverview } from "@/lib/tokenOverview";
 import { KNOWN_TESSERA_TOKENS } from "@/lib/tessera";
+import { formatTicker } from "@/lib/format";
 import { badgeClass, cardClass } from "@/lib/ui";
 
 // Keeps prices genuinely live while the page is open: polls every 30s
@@ -108,7 +109,7 @@ export function TokenPriceGrid({
                 </div>
               )}
               <div className="min-w-0">
-                <div className="truncate font-semibold">${t.symbol}</div>
+                <div className="truncate font-semibold">${formatTicker(t.symbol)}</div>
                 <div className="truncate text-xs text-muted-foreground">{t.name}</div>
               </div>
             </div>
