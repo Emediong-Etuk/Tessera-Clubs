@@ -69,16 +69,30 @@ export function TokenPriceGrid({
     return () => clearInterval(interval);
   }, []);
 
+  // A poll failure only means something to show: if we already have tokens
+  // on screen (from a prior successful load), it's a transient blip that
+  // self-heals on the next 30s poll -- not worth a loud, alarming banner
+  // over data that's still perfectly valid. The full error state is
+  // reserved for the genuine case of having nothing to show at all.
+  const hasTokens = tokens.length > 0;
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <span className={`h-1.5 w-1.5 rounded-full ${refreshing ? "animate-pulse bg-accent" : "bg-accent/50"}`} aria-hidden />
-        {lastUpdated
-          ? `Updated ${lastUpdated.toLocaleTimeString()} · refreshes automatically every 30s`
-          : "Waiting for a live price update..."}
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            error && hasTokens ? "animate-pulse bg-warn" : refreshing ? "animate-pulse bg-accent" : "bg-accent/50"
+          }`}
+          aria-hidden
+        />
+        {error && hasTokens
+          ? `Couldn't refresh just now -- showing prices from ${lastUpdated ? lastUpdated.toLocaleTimeString() : "the last update"}. Retrying automatically every 30s.`
+          : lastUpdated
+            ? `Updated ${lastUpdated.toLocaleTimeString()} · refreshes automatically every 30s`
+            : "Waiting for a live price update..."}
       </div>
 
-      {error && (
+      {error && !hasTokens && (
         <div className="mb-4 rounded-2xl border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
           <p>
             Couldn&apos;t reach live price data right now ({error}). Known mints:{" "}

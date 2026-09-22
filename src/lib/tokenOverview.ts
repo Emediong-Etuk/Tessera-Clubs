@@ -15,6 +15,17 @@ export interface TokenOverview {
   priceSource: "jupiter" | "tessera";
 }
 
+// Both upstream APIs are third-party and occasionally blip at the same
+// time (Tessera has been observed to 500 intermittently; Jupiter's free
+// "lite" tier rate-limits under load) even though neither is down for
+// long. Rather than surface that as a hard error to every client mid-poll,
+// the last successful merged snapshot is kept in memory for a short
+// window so a single bad round-trip degrades to "slightly stale" instead
+// of "broken". A genuine, sustained outage still surfaces as an error once
+// that window elapses.
+const LAST_GOOD_TTL_MS = 5 * 60_000;
+let lastGood: { data: TokenOverview[]; fetchedAt: number } | null = null;
+
 /**
  * Merges Jupiter's real-time market data (price, 24h change, logo, holder
  * count -- the numbers that actually move) with Tessera's own
@@ -34,7 +45,7 @@ export async function getTokenOverviews(): Promise<TokenOverview[]> {
   }
 
   if (marketResult.status === "fulfilled" && marketResult.value.length > 0) {
-    return marketResult.value.map((m) => {
+    const data = marketResult.value.map((m) => {
       const tessera = tesseraByMint.get(m.mint);
       return {
         mint: m.mint,
@@ -45,13 +56,15 @@ export async function getTokenOverviews(): Promise<TokenOverview[]> {
         usdPrice: m.usdPrice,
         priceChange24h: m.priceChange24h,
         holders: m.holderCount ?? tessera?.holders ?? null,
-        priceSource: "jupiter",
+        priceSource: "jupiter" as const,
       };
     });
+    lastGood = { data, fetchedAt: Date.now() };
+    return data;
   }
 
   if (tesseraResult.status === "fulfilled") {
-    return tesseraResult.value.map((t) => ({
+    const data = tesseraResult.value.map((t) => ({
       mint: t.mint,
       symbol: t.symbol,
       name: t.name,
@@ -60,8 +73,14 @@ export async function getTokenOverviews(): Promise<TokenOverview[]> {
       usdPrice: t.markPrice,
       priceChange24h: null,
       holders: t.holders,
-      priceSource: "tessera",
+      priceSource: "tessera" as const,
     }));
+    lastGood = { data, fetchedAt: Date.now() };
+    return data;
+  }
+
+  if (lastGood && Date.now() - lastGood.fetchedAt < LAST_GOOD_TTL_MS) {
+    return lastGood.data;
   }
 
   const jupiterErr = marketResult.status === "rejected" ? marketResult.reason : null;
