@@ -40,6 +40,12 @@ export async function GET(req: Request) {
       .filter((c) => c.membershipId === m.id)
       .reduce((sum, c) => sum + c.amountUsdc, 0);
     const isCreator = m.club.memberships[0]?.id === m.id;
+    // Whether this member has any contribution that's already gone through
+    // a batched buy -- i.e. whether they hold a real (nonzero) share of the
+    // club's T-Token position that "leaving" would mean giving up.
+    const hasExecutedPosition = m.club.contributions.some(
+      (c) => c.membershipId === m.id && c.executionId !== null
+    );
 
     return {
       inviteCode: m.club.inviteCode,
@@ -53,6 +59,7 @@ export async function GET(req: Request) {
       pendingPoolUsdc,
       myContributedUsdc,
       hasExited: m.exits.length > 0,
+      hasExecutedPosition,
       executionCount: m.club.executions.length,
     };
   });

@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { BackLink } from "@/components/BackLink";
 import { NavLink } from "@/components/NavLink";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { badgeClass, buttonClass, cardClass } from "@/lib/ui";
 import { formatUsd } from "@/lib/format";
+import { humanizeChainError } from "@/lib/chainErrors";
 
 interface MyClub {
   inviteCode: string;
@@ -19,6 +21,7 @@ interface MyClub {
   pendingPoolUsdc: number;
   myContributedUsdc: number;
   hasExited: boolean;
+  hasExecutedPosition: boolean;
   executionCount: number;
 }
 
@@ -26,6 +29,9 @@ export default function MyClubsPage() {
   const { publicKey, connected } = useWallet();
   const [clubs, setClubs] = useState<MyClub[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [leavingClub, setLeavingClub] = useState<MyClub | null>(null);
+  const [leaveBusy, setLeaveBusy] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!publicKey) return;
@@ -44,6 +50,27 @@ export default function MyClubsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data load on mount/wallet-connect, not a render-loop hazard
     load();
   }, [load]);
+
+  async function confirmLeave() {
+    if (!leavingClub || !publicKey) return;
+    setLeaveBusy(true);
+    setLeaveError(null);
+    try {
+      const res = await fetch(`/api/clubs/${leavingClub.inviteCode}/exit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: publicKey.toBase58(), payoutType: "USDC" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to leave the club");
+      setLeavingClub(null);
+      await load();
+    } catch (err) {
+      setLeaveError(humanizeChainError(err));
+    } finally {
+      setLeaveBusy(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -122,10 +149,47 @@ export default function MyClubsPage() {
                     </div>
                   </div>
                 )}
+                {!club.hasExited && (
+                  <div className="mt-3 border-t border-border pt-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setLeaveError(null);
+                        setLeavingClub(club);
+                      }}
+                      disabled={!club.hasExecutedPosition}
+                      title={
+                        club.hasExecutedPosition
+                          ? undefined
+                          : "Nothing to leave yet -- this club hasn't executed a batched buy for your contribution."
+                      }
+                      className={buttonClass("danger", "sm")}
+                    >
+                      Leave club
+                    </button>
+                  </div>
+                )}
               </NavLink>
             );
           })}
         </div>
+      )}
+
+      {leavingClub && (
+        <ConfirmDialog
+          title={`Leave ${leavingClub.name}?`}
+          body="Leaving cashes out your current share as USDC right now, and removes you from this club. You will no longer receive a share of any profit when the other members later decide to take profit -- this can't be undone."
+          error={leaveError}
+          confirmLabel="Leave club"
+          busyLabel="Leaving..."
+          busy={leaveBusy}
+          onConfirm={confirmLeave}
+          onCancel={() => {
+            setLeavingClub(null);
+            setLeaveError(null);
+          }}
+        />
       )}
     </div>
   );
