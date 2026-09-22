@@ -32,6 +32,12 @@ export default function MyClubsPage() {
   const [leavingClub, setLeavingClub] = useState<MyClub | null>(null);
   const [leaveBusy, setLeaveBusy] = useState(false);
   const [leaveError, setLeaveError] = useState<string | null>(null);
+  // No executed position yet means no profit is at stake, so leaving that
+  // club skips the confirmation dialog entirely and fires right away --
+  // tracked separately (by invite code) so only the clicked card shows a
+  // busy/error state instead of the shared dialog.
+  const [quickLeaveBusyCode, setQuickLeaveBusyCode] = useState<string | null>(null);
+  const [quickLeaveError, setQuickLeaveError] = useState<{ code: string; message: string } | null>(null);
 
   const load = useCallback(async () => {
     if (!publicKey) return;
@@ -69,6 +75,26 @@ export default function MyClubsPage() {
       setLeaveError(humanizeChainError(err));
     } finally {
       setLeaveBusy(false);
+    }
+  }
+
+  async function quickLeave(club: MyClub) {
+    if (!publicKey) return;
+    setQuickLeaveBusyCode(club.inviteCode);
+    setQuickLeaveError(null);
+    try {
+      const res = await fetch(`/api/clubs/${club.inviteCode}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: publicKey.toBase58() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to leave the club");
+      await load();
+    } catch (err) {
+      setQuickLeaveError({ code: club.inviteCode, message: humanizeChainError(err) });
+    } finally {
+      setQuickLeaveBusyCode(null);
     }
   }
 
@@ -155,19 +181,26 @@ export default function MyClubsPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setLeaveError(null);
-                        setLeavingClub(club);
+                        if (club.hasExecutedPosition) {
+                          setLeaveError(null);
+                          setLeavingClub(club);
+                        } else {
+                          quickLeave(club);
+                        }
                       }}
-                      disabled={!club.hasExecutedPosition}
+                      disabled={quickLeaveBusyCode === club.inviteCode}
                       title={
                         club.hasExecutedPosition
                           ? undefined
-                          : "Nothing to leave yet -- this club hasn't executed a batched buy for your contribution."
+                          : "Nothing executed yet, so leaving just refunds any pending contribution -- no confirmation needed."
                       }
                       className={buttonClass("danger", "sm")}
                     >
-                      Leave club
+                      {quickLeaveBusyCode === club.inviteCode ? "Leaving..." : "Leave club"}
                     </button>
+                    {quickLeaveError?.code === club.inviteCode && (
+                      <p className="mt-2 text-xs text-danger">{quickLeaveError.message}</p>
+                    )}
                   </div>
                 )}
               </NavLink>

@@ -19,9 +19,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     return NextResponse.json({ error: "walletAddress is not a valid Solana address" }, { status: 400 });
   }
 
+  // update: clears leftAt so a wallet that previously left a still-open
+  // club (before any batched buy) can rejoin, rather than being
+  // permanently locked out by its own earlier Membership row.
   const membership = await prisma.membership.upsert({
     where: { clubId_walletAddress: { clubId: club.id, walletAddress } },
-    update: {},
+    update: { leftAt: null },
     create: { clubId: club.id, walletAddress },
   });
 

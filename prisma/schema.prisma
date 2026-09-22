@@ -37,10 +37,12 @@ model Club {
 }
 
 model Membership {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   clubId        String
   walletAddress String
-  joinedAt      DateTime @default(now())
+  joinedAt      DateTime  @default(now())
+  /** Set when the member leaves a club that hasn't executed a buy for them yet (nothing to redeem, just an on-chain refund of any pending contribution). Payout-bearing exits are still tracked via `exits`. */
+  leftAt        DateTime?
 
   club          Club           @relation(fields: [clubId], references: [id])
   contributions Contribution[]
@@ -57,6 +59,8 @@ model Contribution {
   txSignature    String   @unique
   contributedAt  DateTime @default(now())
   executionId    String?
+  /** Set if this still-pending (never executed) contribution was refunded back to the member because they left before a batched buy swept it up. */
+  refundedAt     DateTime?
 
   club         Club        @relation(fields: [clubId], references: [id])
   membership   Membership  @relation(fields: [membershipId], references: [id])

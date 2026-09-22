@@ -69,7 +69,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
   const clubActualCostUsd =
     preview.totalPendingUsdc - comparison.pooledValueUsd + comparison.executionCostClubUsd;
 
-  const pendingContributions = club.contributions.filter((c) => c.executionId === null);
+  const pendingContributions = club.contributions.filter((c) => c.executionId === null && !c.refundedAt);
 
   const execution = await prisma.$transaction(async (txDb) => {
     const created = await txDb.execution.create({

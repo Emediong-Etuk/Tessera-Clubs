@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
-import { Transaction, PublicKey, sendAndConfirmTransaction } from "@solana/web3.js";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createTransferCheckedInstruction,
-} from "@solana/spl-token";
 import { prisma } from "@/lib/prisma";
 import { getClubByCodeOrId, getClubTTokenBalance, getMemberEntitlementPct } from "@/lib/club";
-import {
-  getAssociatedTokenAddressForOwner,
-  getConnection,
-  getMintDecimals,
-  getProgramIdForMint,
-  loadClubKeypair,
-  sendJupiterSwapWithRetry,
-} from "@/lib/solana";
+import { getConnection, getMintDecimals, loadClubKeypair, sendJupiterSwapWithRetry, sendTokenPayout } from "@/lib/solana";
 import { USDC_MINT, getQuote, getSwapTransaction } from "@/lib/jupiter";
 import { humanizeChainError } from "@/lib/chainErrors";
 
@@ -49,7 +37,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
 
   try {
     if (payoutType === "TTOKEN") {
-      const signature = await payoutTToken({
+      const signature = await sendTokenPayout({
         clubKeypair,
         mint: club.targetTokenMint,
         toWallet: walletAddress,
@@ -80,7 +68,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     });
 
     const usdcReceived = Number(quote.outAmount) / 1_000_000;
-    const signature = await payoutTToken({
+    const signature = await sendTokenPayout({
       clubKeypair,
       mint: USDC_MINT,
       toWallet: walletAddress,
@@ -100,49 +88,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     console.error("Exit payout failed for club", club.id, "membership", membership.id, err);
     return NextResponse.json({ error: humanizeChainError(err) }, { status: 502 });
   }
-}
-
-async function payoutTToken(params: {
-  clubKeypair: import("@solana/web3.js").Keypair;
-  mint: string;
-  toWallet: string;
-  amountUi: number;
-}): Promise<string> {
-  const { clubKeypair, mint, toWallet, amountUi } = params;
-  const conn = getConnection();
-  const decimals = await getMintDecimals(mint);
-  const mintPubkey = new PublicKey(mint);
-  const toPubkey = new PublicKey(toWallet);
-
-  const programId = getProgramIdForMint(mint);
-  const fromAta = getAssociatedTokenAddressForOwner(mint, clubKeypair.publicKey.toBase58());
-  const toAta = getAssociatedTokenAddressForOwner(mint, toWallet);
-
-  const tx = new Transaction();
-  tx.add(
-    createAssociatedTokenAccountIdempotentInstruction(
-      clubKeypair.publicKey,
-      toAta,
-      toPubkey,
-      mintPubkey,
-      programId
-    )
-  );
-  const amountBaseUnits = BigInt(Math.round(amountUi * 10 ** decimals));
-  tx.add(
-    createTransferCheckedInstruction(
-      fromAta,
-      mintPubkey,
-      toAta,
-      clubKeypair.publicKey,
-      amountBaseUnits,
-      decimals,
-      [],
-      programId
-    )
-  );
-
-  return sendAndConfirmTransaction(conn, tx, [clubKeypair], { commitment: "confirmed" });
 }
 
 async function recordExit(data: {

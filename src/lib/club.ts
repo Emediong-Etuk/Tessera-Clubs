@@ -22,16 +22,16 @@ export async function getClubByCodeOrId(codeOrId: string) {
 
 export type ClubWithRelations = NonNullable<Awaited<ReturnType<typeof getClubByCodeOrId>>>;
 
-/** USDC contributed this round that hasn't been swept into a batched buy yet. */
+/** USDC contributed this round that hasn't been swept into a batched buy (or refunded to a member who left) yet. */
 export function getPendingPoolTotal(club: ClubWithRelations): number {
   return club.contributions
-    .filter((c) => c.executionId === null)
+    .filter((c) => c.executionId === null && !c.refundedAt)
     .reduce((sum, c) => sum + c.amountUsdc, 0);
 }
 
 export function getActiveMemberships(club: ClubWithRelations) {
   const exitedMembershipIds = new Set(club.exits.map((e) => e.membershipId));
-  return club.memberships.filter((m) => !exitedMembershipIds.has(m.id));
+  return club.memberships.filter((m) => !exitedMembershipIds.has(m.id) && !m.leftAt);
 }
 
 /**
@@ -97,11 +97,11 @@ export async function getMemberPositions(club: ClubWithRelations): Promise<Membe
         .filter((c) => c.executionId !== null)
         .reduce((s, c) => s + c.amountUsdc, 0),
       pendingContributionUsdc: contributions
-        .filter((c) => c.executionId === null)
+        .filter((c) => c.executionId === null && !c.refundedAt)
         .reduce((s, c) => s + c.amountUsdc, 0),
       entitlementPct: entitlementPct.get(m.id) ?? 0,
       estimatedTTokenAmount: estByMembership.get(m.id) ?? 0,
-      hasExited: exitedIds.has(m.id),
+      hasExited: exitedIds.has(m.id) || Boolean(m.leftAt),
     };
   });
 }
@@ -122,7 +122,7 @@ export interface SavingsPreview {
 }
 
 export async function buildSavingsPreview(club: ClubWithRelations): Promise<SavingsPreview | null> {
-  const pending = club.contributions.filter((c) => c.executionId === null);
+  const pending = club.contributions.filter((c) => c.executionId === null && !c.refundedAt);
   if (pending.length === 0) return null;
 
   const byMembership = new Map<string, number>();

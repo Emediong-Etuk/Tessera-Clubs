@@ -1,9 +1,11 @@
-import { Connection, Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction, VersionedTransaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
   ACCOUNT_SIZE,
   ExtensionType,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferCheckedInstruction,
   getAccountLen,
   getAssociatedTokenAddressSync,
   getMint,
@@ -212,4 +214,45 @@ export async function sendJupiterSwapWithRetry(params: {
     }
   }
   throw lastErr;
+}
+
+/**
+ * Send `amountUi` of `mint` from a club-wallet keypair to a member's
+ * wallet, creating their associated token account first if it doesn't
+ * exist yet. Shared by both exit payouts (T-Token or USDC) and pre-execution
+ * "leave" refunds (always USDC) -- the transfer itself is identical either
+ * way, just a different mint/amount.
+ */
+export async function sendTokenPayout(params: {
+  clubKeypair: Keypair;
+  mint: string;
+  toWallet: string;
+  amountUi: number;
+}): Promise<string> {
+  const { clubKeypair, mint, toWallet, amountUi } = params;
+  const conn = getConnection();
+  const decimals = await getMintDecimals(mint);
+  const mintPubkey = new PublicKey(mint);
+  const toPubkey = new PublicKey(toWallet);
+
+  const programId = getProgramIdForMint(mint);
+  const fromAta = getAssociatedTokenAddressForOwner(mint, clubKeypair.publicKey.toBase58());
+  const toAta = getAssociatedTokenAddressForOwner(mint, toWallet);
+
+  const tx = new Transaction();
+  tx.add(
+    createAssociatedTokenAccountIdempotentInstruction(
+      clubKeypair.publicKey,
+      toAta,
+      toPubkey,
+      mintPubkey,
+      programId
+    )
+  );
+  const amountBaseUnits = BigInt(Math.round(amountUi * 10 ** decimals));
+  tx.add(
+    createTransferCheckedInstruction(fromAta, mintPubkey, toAta, clubKeypair.publicKey, amountBaseUnits, decimals, [], programId)
+  );
+
+  return sendAndConfirmTransaction(conn, tx, [clubKeypair], { commitment: "confirmed" });
 }

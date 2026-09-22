@@ -34,10 +34,10 @@ export async function GET(req: Request) {
 
   const clubs = memberships.map((m) => {
     const pendingPoolUsdc = m.club.contributions
-      .filter((c) => c.executionId === null)
+      .filter((c) => c.executionId === null && !c.refundedAt)
       .reduce((sum, c) => sum + c.amountUsdc, 0);
     const myContributedUsdc = m.club.contributions
-      .filter((c) => c.membershipId === m.id)
+      .filter((c) => c.membershipId === m.id && !c.refundedAt)
       .reduce((sum, c) => sum + c.amountUsdc, 0);
     const isCreator = m.club.memberships[0]?.id === m.id;
     // Whether this member has any contribution that's already gone through
@@ -58,7 +58,7 @@ export async function GET(req: Request) {
       isCreator,
       pendingPoolUsdc,
       myContributedUsdc,
-      hasExited: m.exits.length > 0,
+      hasExited: m.exits.length > 0 || Boolean(m.leftAt),
       hasExecutedPosition,
       executionCount: m.club.executions.length,
     };
